@@ -30,17 +30,17 @@ const sourceAnalysisSchema = z.object({
   title: z.string().min(1),
   summary: z.string().min(1),
   concepts: z
-    .array(z.object({ name: z.string().min(1), description: z.string().default("") }))
+    .array(z.object({ name: z.string().min(2).max(60), description: z.string().min(10).max(500) }))
     .max(12)
     .default([]),
   entities: z
-    .array(z.object({ name: z.string().min(1), description: z.string().default("") }))
+    .array(z.object({ name: z.string().min(2).max(80), description: z.string().min(10).max(500) }))
     .max(12)
     .default([]),
   claims: z
     .array(
       z.object({
-        text: z.string().min(1),
+        text: z.string().min(10).max(200),
         confidence: z.number().min(0).max(1).default(0.6),
         status: z.enum(["extracted", "inferred", "conflicted", "stale"]).default("extracted"),
         polarity: z.enum(["positive", "negative", "neutral"]).default("neutral"),
@@ -302,8 +302,14 @@ async function providerAnalysis(
   manifest: SourceManifest,
   text: string,
   provider: ProviderAdapter,
-  schema: VaultSchema
+  schema: VaultSchema,
+  promptConfig?: { conceptRules?: string[]; entityRules?: string[]; claimRules?: string[]; systemExtra?: string[] }
 ): Promise<SourceAnalysis> {
+  const conceptRuleLines = (promptConfig?.conceptRules ?? []).map((r) => `CONCEPT RULE: ${r}`);
+  const entityRuleLines = (promptConfig?.entityRules ?? []).map((r) => `ENTITY RULE: ${r}`);
+  const claimRuleLines = (promptConfig?.claimRules ?? []).map((r) => `CLAIM RULE: ${r}`);
+  const systemExtraLines = promptConfig?.systemExtra ?? [];
+
   const parsed = await provider.generateStructured(
     {
       system: [
@@ -313,10 +319,16 @@ async function providerAnalysis(
         "",
         "Return up to 5 broad domain tags that categorize this source. Tags should be lowercase kebab-case (e.g., cryptography, distributed-systems, machine-learning). These are broader categories, not specific concepts or entity names.",
         "",
+        ...conceptRuleLines,
+        ...entityRuleLines,
+        ...claimRuleLines,
+        ...(conceptRuleLines.length || entityRuleLines.length || claimRuleLines.length ? [""] : []),
         `Vault schema path: ${schema.path}`,
         "",
         "Vault schema instructions:",
-        truncate(schema.content, 6000)
+        truncate(schema.content, 6000),
+        "",
+        ...systemExtraLines
       ].join("\n"),
       prompt: `Analyze the following source and return structured JSON.\n\nSource title: ${manifest.title}\nSource kind: ${manifest.sourceKind}\nSource id: ${manifest.sourceId}\n\nText:\n${truncate(text, 18000)}`
     },
@@ -413,7 +425,8 @@ export async function analyzeSource(
   extractedText: string | undefined,
   provider: ProviderAdapter,
   paths: ResolvedPaths,
-  schema: VaultSchema
+  schema: VaultSchema,
+  promptConfig?: { conceptRules?: string[]; entityRules?: string[]; claimRules?: string[]; systemExtra?: string[] }
 ): Promise<SourceAnalysis> {
   const cachePath = path.join(paths.analysesDir, `${manifest.sourceId}.json`);
   const cached = await readJsonFile<SourceAnalysis>(cachePath);
@@ -463,7 +476,7 @@ export async function analyzeSource(
       analysis = heuristicAnalysis(manifest, content, schema.hash);
     } else {
       try {
-        analysis = await providerAnalysis(manifest, content, provider, schema);
+        analysis = await providerAnalysis(manifest, content, provider, schema, promptConfig);
       } catch {
         analysis = heuristicAnalysis(manifest, content, schema.hash);
       }
@@ -490,7 +503,7 @@ export async function analyzeSource(
     analysis = heuristicAnalysis(manifest, content, schema.hash);
   } else {
     try {
-      analysis = await providerAnalysis(manifest, content, provider, schema);
+      analysis = await providerAnalysis(manifest, content, provider, schema, promptConfig);
     } catch {
       analysis = heuristicAnalysis(manifest, content, schema.hash);
     }

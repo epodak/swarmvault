@@ -5252,6 +5252,7 @@ export async function compileVault(rootDir: string, options: CompileOptions = {}
   }
 
   const analysisProgress = createCompileProgressReporter("analyze", manifests.length);
+  const compilePromptConfig = config.prompts?.compile;
   const [dirtyAnalyses, cleanAnalyses] = await Promise.all([
     Promise.all(
       dirty.map(async (manifest) => {
@@ -5260,7 +5261,8 @@ export async function compileVault(rootDir: string, options: CompileOptions = {}
           await readExtractedText(rootDir, manifest),
           provider,
           paths,
-          getEffectiveSchema(schemas, sourceProjects[manifest.sourceId] ?? null)
+          getEffectiveSchema(schemas, sourceProjects[manifest.sourceId] ?? null),
+          compilePromptConfig
         );
         analysisProgress.tick(manifest.title);
         return analysis;
@@ -5278,7 +5280,8 @@ export async function compileVault(rootDir: string, options: CompileOptions = {}
           await readExtractedText(rootDir, manifest),
           provider,
           paths,
-          getEffectiveSchema(schemas, sourceProjects[manifest.sourceId] ?? null)
+          getEffectiveSchema(schemas, sourceProjects[manifest.sourceId] ?? null),
+          compilePromptConfig
         );
         analysisProgress.tick(manifest.title);
         return analysis;

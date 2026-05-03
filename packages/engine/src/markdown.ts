@@ -687,8 +687,9 @@ export function buildAggregatePage(
       "",
       ...sourceAnalyses.flatMap((item) =>
         item.claims
-          .filter((claim) => claim.text.toLowerCase().includes(name.toLowerCase()))
-          .map((claim) => `- ${claim.text} [source:${claim.citation}]`)
+          .filter((claim) => claim.text.toLowerCase().includes(name.toLowerCase()) && name.length >= 3)
+          .slice(0, 5)
+          .map((claim) => `- ${claim.text.length > 150 ? `${claim.text.slice(0, 147)}...` : claim.text} [source:${claim.citation}]`)
       ),
       "",
       ...relatedOutputsSection(relatedOutputs),

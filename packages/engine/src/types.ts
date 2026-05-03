@@ -434,6 +434,17 @@ export interface VaultConfig {
   freshness?: FreshnessConfig;
   consolidation?: ConsolidationConfig;
   watch?: WatchConfig;
+  prompts?: CompilePromptConfig;
+}
+
+export interface CompilePromptConfig {
+  compile?: {
+    systemExtra?: string[];
+    conceptRules?: string[];
+    entityRules?: string[];
+    claimRules?: string[];
+  };
+  customModule?: string;
 }
 
 /**

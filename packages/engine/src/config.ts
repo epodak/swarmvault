@@ -326,6 +326,19 @@ const vaultConfigSchema = z.object({
       repoRoots: z.array(z.string().min(1)).optional(),
       excludeRepoRoots: z.array(z.string().min(1)).optional()
     })
+    .optional(),
+  prompts: z
+    .object({
+      compile: z
+        .object({
+          systemExtra: z.array(z.string()).optional(),
+          conceptRules: z.array(z.string()).optional(),
+          entityRules: z.array(z.string()).optional(),
+          claimRules: z.array(z.string()).optional()
+        })
+        .optional(),
+      customModule: z.string().min(1).optional()
+    })
     .optional()
 });
 
@@ -463,6 +476,25 @@ export function defaultVaultConfig(profile: VaultProfileConfig = defaultVaultPro
       shardSize: 25000,
       hybrid: true,
       rerank: false
+    },
+    prompts: {
+      compile: {
+        conceptRules: [
+          "Names must be 2-60 characters, human-readable nouns or noun phrases.",
+          "Exclude pure numbers, dates, LaTeX symbols, single letters, and punctuation-only strings.",
+          "Prefer specific domain terms over generic words (e.g. 'signal masking' not 'dark')."
+        ],
+        entityRules: [
+          "Names must be 2-80 characters, proper nouns or well-known designations.",
+          "Exclude generic titles, pronouns, and incomplete fragments.",
+          "Each entity must have a description of at least 10 characters explaining what it is."
+        ],
+        claimRules: [
+          "Each claim must be a complete sentence under 200 characters.",
+          "Claims must contain substantive information, not trivial observations.",
+          "Exclude claims that merely repeat the source title or section heading."
+        ]
+      }
     }
   };
 }
