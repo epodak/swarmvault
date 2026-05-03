@@ -1,0 +1,27 @@
+# .npmignore overrides .gitignore for npm pack
+# We intentionally include dist/ for global npm install from fork
+
+# Keep these excluded
+spec.md
+node_modules/
+coverage/
+.turbo/
+.DS_Store
+*.log
+.env
+.env.*
+raw/
+wiki/
+state/
+agent/
+tmp/
+docs/superpowers/
+.live-smoke-artifacts/
+.oss-corpus-artifacts/
+.release-preflight/
+.pnpm-approve-builds.json
+
+# Explicitly include dist (overriding .gitignore)
+!packages/cli/dist/
+!packages/engine/dist/
+!packages/viewer/dist/
