@@ -29,7 +29,7 @@
     "release:publish": "node ./scripts/release-publish.mjs",
     "skill:publish": "node ./scripts/publish-clawhub-skill.mjs",
     "skill:inspect": "clawhub inspect swarmvault --files",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install 2>/dev/null || true"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
